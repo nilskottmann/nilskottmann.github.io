@@ -19,12 +19,5 @@
     "title": "test project 1",
     "section": "",
     "text": "Here goest the first test project"
-  },
-  {
-    "objectID": "projects/test 2.html",
-    "href": "projects/test 2.html",
-    "title": "TidyTuesday: Retail Sales data analysis with Plotly in R",
-    "section": "",
-    "text": "In this post, I will analyse the TidyTuesday dataset about Retail Sales …"
   }
 ]

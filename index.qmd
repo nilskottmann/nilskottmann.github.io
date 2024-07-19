@@ -1,0 +1,14 @@
+---
+title: "Portfolio"
+listing:
+  contents: projects
+  type: grid
+  sort: "date desc"
+  sort-ui: false
+  filter-ui: false
+  categories: true
+  feed: true
+title-block-banner: true
+---
+
+Take a look at some projects I have prepared.

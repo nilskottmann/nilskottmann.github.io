@@ -1,0 +1,13 @@
+---
+title: "test project 1"
+date: 01-2-2024 
+author: Nils Kottmann
+description: |
+    Development of the first portfolio project.
+image: /images/test1.jpg
+categories: [applied AI, mentoring]
+---
+
+## Quarto
+
+Here goest the first test project
