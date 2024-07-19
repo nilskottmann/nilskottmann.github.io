@@ -1,7 +1,6 @@
 project:
   type: website
-  # output-dir: docs
-  output-dir: "C:/Users/Kottmann001/Documents/GitHub/nilskottmann.github.io/"
+  output-dir: docs
 website:
   title: "Nils Kottmann"
   site-url: https://nilskottmann.github.io/
