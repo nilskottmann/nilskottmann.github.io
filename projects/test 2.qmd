@@ -1,9 +1,0 @@
----
-title: "TidyTuesday: Retail Sales data analysis with Plotly in R"
-date: 01-2-2023 
-author: Nils Kottmann
-categories: [code, analysis, visualization, plotly]
-image: /images/test2.jpg
----
-  
-In this post, I will analyse the TidyTuesday dataset about Retail Sales ...
