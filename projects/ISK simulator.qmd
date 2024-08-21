@@ -1,6 +1,6 @@
 ---
 title: "Investeringssparkonto - is it worth it"
-date: 15-8-2024 
+date: 8-30-2024 
 author: Nils Kottmann
 description: |
     Are you saving money by having an ISK?
@@ -19,49 +19,40 @@ format:
     code-summary: "Show the code"
 ---
 
-In this project, I created a simple shiny app [(you can find the code here)](https://quarto.org/docs/) that compares the trade-offs between investing in an investeringssparkonto (ISK, a Swedish investment account that taxes wealth instead of capital gains) compared to a regular Depot account (that taxes 30% on capital gains).
+In this project, I created a shiny app [(you can find the code run in the Hugging Face Space here)](https://huggingface.co/spaces/nilskottmann/isk_simulator/blob/main/app.R) that compares the trade-offs between investing in an investeringssparkonto (ISK, a Swedish investment account that taxes wealth instead of capital gains) compared to a regular Depot account (that taxes 30% on capital gains).
 
+For an ISK, the basic trade-off is between the capital gains and the taxes paid each year. The tax is determined by the government borrowing rate on November 30th in the year before plus one percentage point. Basically, the higher the gains are the better an ISK will be (since you don't just get flatly taxed 30% on the gains) but the higher the government borrowing rate is the worse an ISK will be (since you will pay higher taxes on your savings each year).
 
-<!-- # ```{shinylive-r} -->
-<!-- #| standalone: true -->
+# The ISK simulator
 
-
-<!-- ``` -->
-
-try shinylive but manually put in the borrowing rates for now
-
-# The dashboard shinyapps.io
-
-<iframe src="https://nils-kottmann.shinyapps.io/isk_simulator/" width="1400px" height="1000px"></iframe>
-
-# huggingface space
-
-<iframe
-	src="https://nilskottmann-isk-simulator.hf.space"
-	frameborder="0"
-	width="850"
-	height="450"
-></iframe>
+```{r}
+# Hosted on a Hugging Face space
+knitr::include_app("https://nilskottmann-isk-simulator.hf.space", height = "800px")
+```
 
 
 # How 
 
+This Shiny app is written in R and hosted on a Hugging Face Space. For years, prior to 2025 it uses the actual government borrowing rate but for later years it uses the expected future government borrowing rate that you can set yourself.
+
+You can then simulate your investment over a chosen time horizon given the average expected growth and average expected future government borrowing rate to understand your cost implications.
+
+The calculations are done in a few steps:
+
 1.
-Calculate the average value of the account for the year (average of the beginnign of Q1, Q2, Q3, Q4) (plus any investments during the quarter?)
+We take the starting value as the average value of the account for the first year (technically, you should average out the value of your ISK account at the end of each quarter to get the average value for the year - but we simplified it in this example). Then we take the average of year start and year end values to arrive at the average account value for the year.
 
 2.
-The tax base for the ISK is determined by multiplying the average value by the government's standard rate, which is calculated as the government borrowing rate plus 1%. For 2023, the standard rate is 3.03%.
+This account value is then each year taxed. For years where we know the government borrowing rate - 2024 or earlier - we use the actual government borrowing rate and for later years we use the expected future government borrowing rate that you can select yourself. The government borrowing rate is used to calculate an expected return on the ISK account by taking the government borrowing rate, adding 1 percentage point, multiplying by the average value of the account (to get expected capital gains) and multiplying *that* by 30% to arrive at the taxes to be paid.
 
-Det genomsnittliga värdet på ditt ISK under året multipliceras med statslåneräntan den 30 november året innan, plus 1 procentenhet.
+<!-- add equation -->
 
-3.
-The tax to be paid is 30% of the tax base.
+3. The investment grows each year by the expected growth rate (choose yourself) and the ISK account pays taxes each year while the depot account only pays taxes in the final year.
 
-4.Determine the total return before tax, then subtract the tax paid to get the net return. Finally, calculate the annual return as a percentage of the initial value.
+4.In the table, you see the final value of the investment, as well as taxes paid and net returns. Any other costs of the investments are not taken into account.
 
 ::: {.callout-note}
 # About the data
-The data here comes from SCB
-
+The government borrowing rate is taken from Riksgälden.
 :::
 
