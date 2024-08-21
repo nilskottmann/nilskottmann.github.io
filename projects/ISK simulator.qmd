@@ -1,0 +1,67 @@
+---
+title: "Investeringssparkonto - is it worth it"
+date: 15-8-2024 
+author: Nils Kottmann
+description: |
+    Are you saving money by having an ISK?
+# image: /images/test1.jpg
+categories: [interactive, dashboard, shiny]
+# filters: 
+  # - shinylive
+execute:
+  # echo: false
+  message: false
+  warning: false
+format: 
+  html:
+    code-overflow: wrap
+    code-fold: true
+    code-summary: "Show the code"
+---
+
+In this project, I created a simple shiny app [(you can find the code here)](https://quarto.org/docs/) that compares the trade-offs between investing in an investeringssparkonto (ISK, a Swedish investment account that taxes wealth instead of capital gains) compared to a regular Depot account (that taxes 30% on capital gains).
+
+
+<!-- # ```{shinylive-r} -->
+<!-- #| standalone: true -->
+
+
+<!-- ``` -->
+
+try shinylive but manually put in the borrowing rates for now
+
+# The dashboard shinyapps.io
+
+<iframe src="https://nils-kottmann.shinyapps.io/isk_simulator/" width="1400px" height="1000px"></iframe>
+
+# huggingface space
+
+<iframe
+	src="https://nilskottmann-isk-simulator.hf.space"
+	frameborder="0"
+	width="850"
+	height="450"
+></iframe>
+
+
+# How 
+
+1.
+Calculate the average value of the account for the year (average of the beginnign of Q1, Q2, Q3, Q4) (plus any investments during the quarter?)
+
+2.
+The tax base for the ISK is determined by multiplying the average value by the government's standard rate, which is calculated as the government borrowing rate plus 1%. For 2023, the standard rate is 3.03%.
+
+Det genomsnittliga värdet på ditt ISK under året multipliceras med statslåneräntan den 30 november året innan, plus 1 procentenhet.
+
+3.
+The tax to be paid is 30% of the tax base.
+
+4.Determine the total return before tax, then subtract the tax paid to get the net return. Finally, calculate the annual return as a percentage of the initial value.
+
+::: {.callout-note}
+# About the data
+The data here comes from SCB
+
+:::
+

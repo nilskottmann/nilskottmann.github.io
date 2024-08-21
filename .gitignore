@@ -1,0 +1,13 @@
+/.luarc.json
+
+# Quarto, output-dir is docs for gh-pages
+/.quarto/
+/_freeze/
+
+# notebooks
+**/.ipynb_checkpoints
+
+# RStudio
+/.Rproj.user/
+.RHistory
+**/rsconnect

@@ -1,0 +1,71 @@
+---
+title: "Tidy Tuesday 2024w6 - LGBTQIA+ Movies"
+date: 01-2-2024 
+author: Nils Kottmann
+description: |
+    A look at the LGBTQIA+ movies with data from The Movie Database.
+image: /images/test1.jpg
+categories: [applied AI, mentoring]
+execute:
+  # echo: false
+  message: false
+  warning: false
+format: 
+  html:
+    code-overflow: wrap
+    code-fold: true
+    code-summary: "Show the code"
+---
+
+
+```{r set up}
+library(tidyverse)
+library(gt) # better tables
+library(ggtext) # better titles and captions for graphs
+library(pxweb) # grabbing data from SCB
+library(cols4all) # better color choices with accessible palettes
+```
+
+In this 
+
+
+# Gather data
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2024, week = 26)
+lgbtq_movies <- tuesdata$lgbtq_movies
+
+
+# Genre Ids manual
+genres <- tibble(
+  genre = c("Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama",
+            "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance",
+            "Science Fiction", "TV Movie", "Thriller", "War", "Western"),
+  genre_id = c(28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37)
+)
+```
+
+
+::: {.callout-note}
+# About the data
+The Movie Database (TMDB) is a community built movie and TV database. Every piece of data has been added by our amazing community dating back to 2008. TMDb's strong international focus and breadth of data is largely unmatched and something we're incredibly proud of. Put simply, we live and breathe community and that's precisely what makes us different.
+
+The data is pulled from the TMDB API using LGBT+ keywords, which then returned keywords used in the database. Most keywords were used for the final query, but a few were discarded due to not being relevant (e.g. - 'gender differences').
+
+The keyword array is as follows: ['lgbt', 'gay', 'lesbian','transgender','bisexual','intersex','queer','genderqueer','non-binary','gender', 'asexual']
+:::
+
+
+# What 
+
+Where do the most popular LGBTQ+ movies come from? Are more LGBTQ+ movies being released over time?
+
+
+
+```{r}
+lgbtq_movies %>%
+  group_by(original_language) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+```
+

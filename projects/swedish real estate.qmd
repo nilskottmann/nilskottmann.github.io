@@ -1,0 +1,219 @@
+---
+title: "The Swedish Real Estate market"
+date: 7-20-2024 
+author: Nils Kottmann
+categories: [code, analysis, visualization]
+description: |
+    A look at the housing market in the Swedish metropolitan areas.
+image: /images/stockholm_stadshuset.jpg
+toc: true
+toc-location: left
+execute:
+  # echo: false
+  message: false
+  warning: false
+format: 
+  html:
+    code-overflow: wrap
+    code-fold: true
+    code-summary: "Show the code"
+---
+
+```{r set up}
+library(tidyverse)
+library(gt) # better tables
+library(ggtext) # better titles and captions for graphs
+library(pxweb) # grabbing data from SCB
+library(cols4all) # better color choices with accessible palettes
+
+```
+
+
+  
+In this post, I will take a look at the swedish real estate market.
+
+Trying to answer the question how worried should one be about the housing market? 
+
+# Gather data
+
+```{r download data}
+# Sold tenant-owned flats by region, observations and year
+# d <- pxweb_interactive("https://api.scb.se/OV0104/v1/doris/en/ssd/START/BO/BO0501/BO0501C/FastprisBRFRegionAr")
+# PXWEB query 
+
+pxweb_query_list <- 
+  list(
+    "Region"=c("00","0010","0020","0030","0060","01","03","04","05","06","07","08","09","10","12","13","14","17","18","19","20","21","22","23","24","25"),
+    "ContentsCode"=c("BO0501R6","BO0501R7","BO0501R8"),
+    "Tid"=c("2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023"))
+
+px_data <- 
+  pxweb_get(
+    url = "https://api.scb.se/OV0104/v1/doris/en/ssd/START/BO/BO0501/BO0501C/FastprisBRFRegionAr",
+    query = pxweb_query_list)
+
+sales_region_tmp <- as.data.frame(px_data, column.name.type = "text", variable.value.type = "text")
+
+# Price index (city & country) 
+
+# Rent index (city)
+
+# Income Index (city)
+
+# Mortgage, Construction, GDP, Inflation (Country)
+```
+
+```{r mutate data}
+sales_region <- sales_region_tmp %>% 
+  rename(
+    n_sales = 'Number of',
+    mean_price_sek_k = 'Average price in SEK thousands',
+    median_price_sek_k = 'Median price in SEK thousands'
+    ) %>% 
+  mutate(year = as.numeric(year)) %>% 
+  group_by(region) %>% 
+  mutate(
+    sales_index = n_sales / n_sales[year == 2010] * 100,
+    mean_price_index = mean_price_sek_k / mean_price_sek_k[year == 2010] * 100,
+    median_price_index = median_price_sek_k / median_price_sek_k[year == 2010] * 100
+    ) %>% 
+  ungroup()
+
+```
+
+
+```{r theming}
+default_theme <-  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.title = element_blank(),
+    plot.title = element_textbox_simple(padding = margin(2, 2, 10, 0)),
+    plot.subtitle = element_textbox_simple(padding = margin(2, 2, 5.5, 0)),
+    plot.caption = element_text(hjust = 0, size = 10, face = "italic"),
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.caption.position =  "plot"
+  )
+
+# Region colors 
+
+names <- sales_region %>% 
+  filter(str_detect(region,"Greater")) %>% 
+  distinct(region) %>% 
+  unlist()
+colors <-  cols4all::c4a(palette = "tol.medium", n = length(names), type = "cat") 
+region_cols <- setNames(colors, names)
+
+rm(names, colors)
+```
+
+::: {.callout-note}
+# About the data
+The data here comes from SCB
+
+:::
+
+
+# Analysis
+
+How active is the housing market?
+
+::: {.panel-tabset}
+
+## Total numbers
+```{r}
+sales_region %>% 
+  filter(str_detect(region,"Greater")) %>% 
+  ggplot(aes(
+    x = year,
+    y = n_sales,
+    group = region,
+    color = region
+    ))+
+  geom_line(linewidth = 1)+
+  ggtitle("Number of sales ") +
+  scale_color_manual(values = region_cols) +
+  default_theme
+```
+
+## Index
+```{r}
+sales_region %>% 
+  filter(str_detect(region,"Greater")) %>% 
+  ggplot(aes(
+    x = year,
+    y = sales_index,
+    group = region,
+    color = region
+    ))+
+  geom_point(alpha = 0.5) +
+  geom_line(linewidth = 1)+
+  ggtitle("Indexed number of sales of tennant-owned flats",
+          subtitle = "Sales in 2010 = 100.") +
+  labs(x = "Year", y = "Sales index")+
+  scale_color_manual(values = region_cols) +
+  default_theme
+```
+
+:::
+
+Activity in the housing market peaked in all three metropolitan areas in 2021 with a sales index of relative to 2010 at `r sales_region %>% filter(str_detect(region,"Greater Stockh"), year == 2021) %>% select(sales_index) %>% round(digits = 0)` in Stockholm, which has since fallen to `r sales_region %>% filter(str_detect(region,"Greater Stockh"), year == 2023) %>% select(sales_index) %>% round(digits = 0)` in 2023. 
+
+# price statistics
+
+::: {.panel-tabset}
+## Median prices
+```{r}
+sales_region %>% 
+  filter(str_detect(region,"Greater")) %>% 
+  ggplot(aes(
+    x = year,
+    y = median_price_sek_k,
+    group = region,
+    color = region
+    ))+
+  geom_line(linewidth = 1)+
+  ggtitle("Median price of tenant-owned flats sold") +
+  labs(x = "Year", y = "Median price (in 1000 SEK)")+
+  scale_color_manual(values = region_cols) +
+  default_theme
+```
+
+## Index
+```{r}
+sales_region %>% 
+  filter(str_detect(region,"Greater")) %>% 
+  ggplot(aes(
+    x = year,
+    y = median_price_index,
+    group = region,
+    color = region
+    ))+
+  geom_point(alpha = 0.5) +
+  geom_line(linewidth = 1)+
+  ggtitle("Indexed number of sales of tennant-owned flats",
+          subtitle = "Sales in 2010 = 100.") +
+  labs(x = "Year", y = "Median price index")+
+  scale_color_manual(values = region_cols) +
+  default_theme
+```
+:::
+
+Median prices peaked in 2021 in Gothenburg and in 2022 in Malmö and Stockholm with prices roughly doubling since 2010.
+
+The median price in Stockholm in 2023 was `r sales_region %>% filter(str_detect(region,"Greater Stockh"), year == 2023) %>% select(median_price_sek_k)/1000 %>% round(digits = 1)` million SEK.
+
+
+
+# Recreating UBS bubble index
+
+
+```{r}
+sales_region %>% filter(str_detect(region,"Greater Stockh"), year == 2023) %>% select(median_price_sek_k)/1000 %>% round(digits = 1)
+
+sales_region %>% filter(str_detect(region,"Greater Stockh")) %>% group_by(region) %>%  mutate(max_prcie = max(median_price_index)) %>% filter(max_prcie == median_price_index)
+```
