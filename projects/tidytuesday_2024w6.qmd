@@ -5,11 +5,7 @@ author: Nils Kottmann
 description: |
     A look at the LGBTQIA+ movies with data from The Movie Database.
 image: /images/test1.jpg
-categories: [applied AI, mentoring]
-execute:
-  # echo: false
-  message: false
-  warning: false
+categories: [tidy tuesday, data analysis, R, in progress]
 format: 
   html:
     code-overflow: wrap
@@ -66,6 +62,7 @@ Where do the most popular LGBTQ+ movies come from? Are more LGBTQ+ movies being 
 lgbtq_movies %>%
   group_by(original_language) %>% 
   summarize(n = n()) %>% 
-  arrange(desc(n))
+  arrange(desc(n)) %>% 
+  ggplot(aes(x = original_language, y = n)) +
+  geom_col()
 ```
-

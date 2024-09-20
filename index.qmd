@@ -8,7 +8,8 @@ listing:
   filter-ui: false
   categories: true
   feed: true
-title-block-banner: true
+# title-block-banner: true
 ---
 
 Take a look at some projects I have prepared.
+

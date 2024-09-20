@@ -6,10 +6,10 @@ about:
   links:
     - icon: linkedin
       text: LinkedIn
-      href: https://linkedin.com
+      href: https://www.linkedin.com/in/nils-kottmann/
     - icon: github
       text: Github
-      href: https://github.com
+      href: https://nilskottmann.github.io/
 ---
 
-About this blog
+I'm a Stockholm based data analyst currently working in the telecom sector.

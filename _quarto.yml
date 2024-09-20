@@ -4,28 +4,18 @@ project:
 website:
   title: "Nils Kottmann"
   site-url: https://nilskottmann.github.io/
-  search:
-    location: navbar
-    type: overlay
   navbar:
     left:
       - href: index.qmd
-        text: Portfolio
+        text: Home
       - href: resume.qmd
-        text: Resume
+        text: CV
     right:
       - href: about.qmd
         text: About
       - icon: linkedin
         href: https://www.linkedin.com/in/nils-kottmann/
         text: "LinkedIn profile"
-fig-format: svg
-# format:
-#   html:
-#     theme: [cosmo, theme_light_custom.scss]
-#     css: styles.css
-#     toc: true
-    # embed-resources: true
 format:
   html:
     page-layout: full
@@ -33,14 +23,10 @@ format:
     theme:
       light:
         - flatly
-        - mozilla.scss
     css: styles.css
-    toc: false
+    toc: true
     embed-resources: true
-    self-contained-math: true
+    
+fig-format: svg
 
-html-math-method:
-  method: mathjax
-  
-execute: 
-  freeze: auto
+

@@ -1,0 +1,278 @@
+---
+title: "Investeringssparkonto - is it worth it?"
+date: 9-18-2024 
+author: Nils Kottmann
+description: |
+    Are you saving money by having an ISK?
+image: /images/isk.webp
+categories: [interactive, dashboard, shiny]
+execute:
+  message: false
+  warning: false
+format: 
+  html:
+    code-overflow: wrap
+    code-fold: true
+    code-summary: "Show the code"
+---
+
+
+In this project, I created a shiny app [(you can find the code run in the Hugging Face Space here)](https://huggingface.co/spaces/nilskottmann/isk_simulator/blob/main/app.R) that compares the trade-offs between investing in an investeringssparkonto (ISK, a Swedish investment account that taxes wealth instead of capital gains) compared to a regular Depot account (that taxes 30% on capital gains).
+
+For an ISK, the basic trade-off is between the capital gains and the taxes paid each year. The tax is determined by the government borrowing rate on November 30th in the year before plus one percentage point. Basically, the higher the gains are the better an ISK will be (since you don't just get flatly taxed 30% on the gains) but the higher the government borrowing rate is the worse an ISK will be (since you will pay higher taxes on your savings each year).
+
+# The ISK simulator
+
+You can calculate this for your own investment by setting up the parameters below. The table will show you if your past investment benefited from either being in an ISK or a regular depot account. 
+
+The graph on the left shows you for a given government borrowing rate, for which levels of annual return a ISK or depot is more beneficial. The graph on the right shows for a given level of returns up to which government borrowing rates a ISK will be beneficial over a depot. The shiny app might take a little while to load when the Hugging Face space is sleeping.
+
+```{r}
+#| column: screen-inset
+# Hosted on a Hugging Face space
+knitr::include_app("https://nilskottmann-isk-simulator.hf.space", height = "800px")
+```
+
+Check it out on [Hugging Face](https://huggingface.co/spaces/nilskottmann/isk_simulator) if the space is sleeping.
+
+# The trade-off
+
+The basic trade-off is between the expected government borrowing rate and the expected annual returns. Below, you can see a graph that illustrates this trade-off.
+
+The color of the points at the intersections of average government borrowing rate and average annual return show which account type is more beneficial. The size of the point shows the difference in percentage points in the average annual net returns between the two account types.
+
+The line shows the border between the two investment account types.
+
+```{r}
+library(ggtext)
+library(tidyverse)
+
+names <- c("ISK","Depot")
+colors <-  cols4all::c4a(palette = "met.egypt", n = length(names), type = "cat") 
+account_cols <- setNames(colors, names)
+
+# a function that takes avg_return and interest_rate as parameters
+calculate_returns <- function(avg_return, interest_rate, start_amount, start_year, investment_horizon) {
+  annual_values <- data.frame(
+    year = seq(start_year, start_year + investment_horizon, by = 1)
+    ) %>%
+    mutate(tax_rate = case_when(
+        interest_rate < 0.0025 ~ 0.0125 * 0.3,
+        TRUE ~ (interest_rate + 0.01) * 0.3)
+    )
+
+  # Update expected values each year
+  annual_values <- annual_values %>%
+    mutate(isk = start_amount * (1 + avg_return)^(year - start_year)) %>%
+    mutate(depot = isk) %>%
+    mutate(
+      isk_tax = case_when(
+        year == start_year ~ isk * tax_rate,
+        TRUE ~ (isk + lag(isk) / 2) * tax_rate
+      ),
+      depot_tax = case_when(
+        year == start_year + investment_horizon ~ (depot - start_amount) * (0.3)
+      )
+    )
+
+  isk_results <- annual_values %>%
+    summarize(
+      start_value = first(isk),
+      final_value = last(isk),
+      tax = sum(isk_tax, na.rm = TRUE)
+    ) %>%
+    mutate(
+      net_return = final_value - start_value - tax,
+      net_return_rate = (final_value - start_value - tax) / start_value,
+      CAGR = ((final_value - tax) / start_value)^(1 / investment_horizon) - 1,
+      account = "ISK",
+      avg_return = !!avg_return,
+      interest_rate = !!interest_rate
+    )
+
+  depot_results <- annual_values %>%
+    summarize(
+      start_value = first(depot),
+      final_value = last(depot),
+      tax = sum(depot_tax, na.rm = TRUE)
+    ) %>%
+    mutate(
+      net_return = final_value - start_value - tax,
+      net_return_rate = (final_value - start_value - tax) / start_value,
+      CAGR = ((final_value - tax) / start_value)^(1 / investment_horizon) - 1,
+      account = "Depot",
+      avg_return = !!avg_return,
+      interest_rate = !!interest_rate
+    )
+
+  result <- bind_rows(isk_results, depot_results) %>%
+    mutate(
+      winner = case_when(net_return == max(net_return) ~ "Winner", TRUE ~ "Loser"),
+      advantage = case_when(net_return == max(net_return) ~ CAGR - min(CAGR), TRUE ~ 0)
+    )
+  result
+}
+
+scenarios <- expand.grid(
+  avg_return = seq(-0.05, 0.15, by = 0.01),
+  interest_rate = seq(0, 0.10, by = 0.01)
+)
+
+results <- purrr::pmap_df(
+  scenarios,
+  ~ calculate_returns(avg_return = ..1, interest_rate = ..2, 100, 1, 10)
+)
+  
+# The graph ####
+results %>%
+  arrange(avg_return, interest_rate) %>%
+  filter(winner == "Winner") %>%
+  group_by(avg_return) %>% # group by x-axis
+  mutate(
+    border = case_when(account != lead(account) ~ "X", TRUE ~ NA),
+    yaxis = case_when(account != lead(account) ~ interest_rate + 0.005, TRUE ~ NA),
+    xaxis = case_when(account != lead(account) ~ avg_return, TRUE ~ NA)
+  ) %>%
+  group_by(interest_rate) %>%
+  mutate(
+    border = case_when(account != lead(account) & (interest_rate == 0 | interest_rate == 0.1) ~ "X", TRUE ~ border),
+    xaxis = case_when(account != lead(account) & (interest_rate == 0 | interest_rate == 0.1) ~ avg_return + 0.005, TRUE ~ xaxis),
+    yaxis = case_when(account != lead(account) & (interest_rate == 0 | interest_rate == 0.1) ~ interest_rate, TRUE ~ yaxis)
+  ) %>%
+  ggplot(aes(
+    x = avg_return,
+    y = interest_rate,
+    color = account
+  )) +
+  geom_point(
+    aes(size = advantage),
+    alpha = 0.5,
+    stroke = NA
+  ) +
+  geom_line(aes(x = xaxis, y = yaxis, group = border), color = "grey90", linewidth = 1.5, show.legend = FALSE) + # add line for border between the two
+  scale_color_manual(values = account_cols) +
+  ggtitle("At which combinations of returns and borrowing rate are ISK or Depot accounts better?",
+    subtitle = "The size of the point shows how much more beneficial the account type is as the percentage point difference in the annual growth rate."
+  ) +
+  labs(
+    x = "Average annual return",
+    y = "Average government borrowing rate"
+  ) +
+  scale_x_continuous(labels = scales::label_percent()) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_size_continuous(labels = scales::label_percent(accuracy = 0.1)) + # Format 'advantage' legend as percentage
+  coord_fixed(ratio = 1) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    panel.grid = element_blank(),
+    plot.title = element_textbox_simple(hjust = 0, padding = margin(2, 2, 10, 0)),
+    plot.subtitle = element_textbox_simple(padding = margin(2, 2, 5.5, 0)),
+    plot.caption = element_text(hjust = 0, size = 10, face = "italic"),
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    legend.title = element_blank(),
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    plot.margin = margin(20, 20, 20, 20)
+  )
+```
+
+# Historic perspective
+
+How does the trade-off compare historically? What was the government borrowing rate?
+
+::: {.column-margin}
+
+::: {.callout-note}
+# About the data
+The government borrowing rate is taken from Riksgälden.
+:::
+
+:::
+
+```{r}
+csv_url <- "https://www.riksgalden.se/globalassets/dokument_sve/statslaneranta/slr-historisk-statslaneranta-csv.csv"
+
+rates_hist_tmp <- readr::read_csv2(csv_url,
+  locale = locale(encoding = "latin1", decimal_mark = ","),
+  col_select = c(1, 2),
+  col_types = "Dc"
+)
+
+rates_hist <- rates_hist_tmp %>%
+  rename(
+    date = 1,
+    rates = 2
+  ) %>%
+  mutate(
+    year = year(date),
+    date = as_date(date),
+    rates = as.numeric(str_replace(rates, "\\,", ".")) / 100
+  )
+
+rates <- rates_hist %>%
+  group_by(year) %>%
+  filter(month(date) == 11 & day(date) <= 30) %>%
+  slice_head() %>%
+  ungroup() %>%
+  mutate(tax_year = year + 1) %>%
+  select(tax_year, rates)
+
+max_year <- max(rates$tax_year)
+
+rates %>% 
+  ggplot(
+    aes(x = tax_year, y = rates, label = paste0(round(rates*100,1),"%"))
+  ) +
+  geom_line(color = "grey50", linewidth = 1) +
+    ggtitle("What was the government borrowing rate for each tax year?",
+    subtitle = paste0(min(rates$tax_year)," - ",max(rates$tax_year))
+  ) +
+  labs(
+    x = "Tax year",
+    y = "Government borrowing rate"
+  ) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  geom_text(data = rates %>% filter(tax_year == max_year), nudge_y = 0.01) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    panel.grid = element_blank(),
+    plot.title = element_textbox_simple(hjust = 0, padding = margin(2, 2, 10, 0)),
+    plot.subtitle = element_textbox_simple(padding = margin(2, 2, 5.5, 0)),
+    plot.caption = element_text(hjust = 0, size = 10, face = "italic"),
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    legend.title = element_blank(),
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    plot.margin = margin(20, 20, 20, 20)
+  )
+```
+
+For the tax year of 2024 the government borrowing rate is 2,6%, meaning you will need an annual return of at least 5% to break even with a ISK compared to a depot.
+
+# How 
+
+This Shiny app is written in R and hosted on a Hugging Face Space. For years, prior to 2025 it uses the actual government borrowing rate but for later years it uses the expected future government borrowing rate that you can set yourself.
+
+You can then simulate your investment over a chosen time horizon given the average expected growth and average expected future government borrowing rate to understand your cost implications.
+
+The calculations are done in a few steps:
+
+1.
+We take the starting value as the average value of the account for the first year (technically, you should average out the value of your ISK account at the end of each quarter to get the average value for the year - but we simplified it in this example). Then we take the average of year start and year end values to arrive at the average account value for the year.
+
+2.
+This account value is then taxed each year. For years where we know the government borrowing rate - 2024 or earlier - we use the actual government borrowing rate and for later years we use the expected future government borrowing rate that you can select yourself. The government borrowing rate is used to calculate an expected return on the ISK account by taking the government borrowing rate, adding 1 percentage point, multiplying by the average value of the account (to get expected capital gains) and multiplying *that* by 30% to arrive at the taxes to be paid.
+
+<!-- add equation -->
+
+3. The investment grows each year by the expected growth rate (choose yourself) and the ISK account pays taxes each year while the depot account only pays taxes in the final year.
+
+4.In the table, you see the final value of the investment, as well as taxes paid and net returns. Any other costs of the investments are not taken into account.
+
+
+
+

@@ -9,7 +9,6 @@ image: /images/stockholm_stadshuset.jpg
 toc: true
 toc-location: left
 execute:
-  # echo: false
   message: false
   warning: false
 format: 
